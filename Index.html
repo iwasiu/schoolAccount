@@ -7,7 +7,7 @@
 
     <!-- ============================================================
          AUTO-REDIRECT — fires immediately on page load
-         Replace YOUR_APPS_SCRIPT_URL with your actual
+         Replace YOUR_APPS_SCRIPT_URL (3 places) with your actual
          https://script.google.com/macros/s/.../exec URL
          ============================================================ -->
     <meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbwaSNUA3soEaIwiuR4obnG74v1pxEfQkp1jzAGKIj7sy4-6v-6jGHFbKKr0z4nYgJp9/exec">
@@ -25,19 +25,45 @@
     </style>
 
     <!-- ============================================================
-         JS FALLBACK — fires immediately too, for browsers that
-         ignore meta-refresh (rare but real: some privacy extensions)
+         REDIRECT GUARD — cross-tab, TTL-based, logout-safe
+         ============================================================
+         Uses localStorage (shared across tabs in the same browser)
+         with a 2-minute TTL. When the guard is live:
+           • The auto-redirect fires immediately.
+           • A second tab opened within 2 min skips the redirect
+             (so users can bookmark / re-open without fighting).
+           • After 2 min the guard expires — next visit from the
+             GitHub URL performs a fresh auto-redirect, which is
+             what you want if the Apps Script session was logged
+             out in the meantime (fresh entry → login page).
          ============================================================ -->
     <script>
-        // Only redirect if we haven't already been redirected in this
-        // browser session (prevents an infinite loop if the Apps
-        // Script URL itself ever redirects back here).
         (function () {
-            if (sessionStorage.getItem('redirected_to_apps_script') === 'yes') {
-                sessionStorage.removeItem('redirected_to_apps_script');
-                return; // stop — don't redirect again
+            var KEY   = 'school_account_last_redirect';
+            var TTL   = 2 * 60 * 1000;          // 2 minutes
+            var now   = Date.now();
+            var last  = 0;
+
+            try { last = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; }
+            catch (e) { /* localStorage blocked → just proceed to redirect */ }
+
+            var withinGuard = (now - last) < TTL;
+
+            // Remember this visit so a second tab within the TTL skips
+            // the redirect and shows the landing card instead.
+            try { localStorage.setItem(KEY, String(now)); }
+            catch (e) { /* localStorage blocked → redirect anyway */ }
+
+            if (withinGuard) {
+                // We were already redirected very recently. Show the
+                // landing card; the user can click through manually.
+                // This prevents the "two tabs fight each other" loop.
+                return;
             }
-            sessionStorage.setItem('redirected_to_apps_script', 'yes');
+
+            // Fresh entry → send the user straight to the Apps Script
+            // app. location.replace() keeps the browser back-button
+            // history clean (no loop back to github.io).
             window.location.replace('https://script.google.com/macros/s/AKfycbwaSNUA3soEaIwiuR4obnG74v1pxEfQkp1jzAGKIj7sy4-6v-6jGHFbKKr0z4nYgJp9/exec');
         })();
     </script>
