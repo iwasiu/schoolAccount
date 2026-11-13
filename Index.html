@@ -6,64 +6,92 @@
     <title>School Account Management System</title>
 
     <!-- ============================================================
-         AUTO-REDIRECT — fires immediately on page load
-         Replace YOUR_APPS_SCRIPT_URL (3 places) with your actual
-         https://script.google.com/macros/s/.../exec URL
+         AUTO-REDIRECT — fires on page load
+         Replace YOUR_APPS_SCRIPT_URL with your real /exec URL:
+         https://script.google.com/macros/s/AKfycb…/exec
          ============================================================ -->
     <meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbwaSNUA3soEaIwiuR4obnG74v1pxEfQkp1jzAGKIj7sy4-6v-6jGHFbKKr0z4nYgJp9/exec">
 
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f7fa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
-        h1 { color: #1a237e; margin-bottom: 10px; }
-        p { color: #455a64; margin-bottom: 25px; line-height: 1.5; }
-        .btn { display: inline-block; padding: 14px 30px; background: #1a237e; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; transition: background 0.2s; }
-        .btn:hover { background: #283593; }
-        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #d0d7e2; border-top-color: #1a237e; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: -3px; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            background: #fff;
+            padding: 36px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 420px;
+            width: 100%;
+        }
+        h1 {
+            color: #1a237e;
+            margin: 0 0 16px;
+            font-size: 1.4rem;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #d0d7e2;
+            border-top-color: #1a237e;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: -3px;
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .status { font-size: 0.85rem; color: #78909c; margin-bottom: 20px; }
+        .status {
+            font-size: 0.9rem;
+            color: #455a64;
+            margin: 0 0 20px;
+        }
+        .hint {
+            font-size: 0.78rem;
+            color: #90a4ae;
+            margin: 0 0 20px;
+            line-height: 1.5;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 28px;
+            background: #1a237e;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.92rem;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #283593; }
     </style>
 
-    <!-- ============================================================
-         REDIRECT GUARD — cross-tab, TTL-based, logout-safe
-         ============================================================
-         Uses localStorage (shared across tabs in the same browser)
-         with a 2-minute TTL. When the guard is live:
-           • The auto-redirect fires immediately.
-           • A second tab opened within 2 min skips the redirect
-             (so users can bookmark / re-open without fighting).
-           • After 2 min the guard expires — next visit from the
-             GitHub URL performs a fresh auto-redirect, which is
-             what you want if the Apps Script session was logged
-             out in the meantime (fresh entry → login page).
-         ============================================================ -->
     <script>
+        // JS redirect — fires before the <body> even paints, so this
+        // page is rarely seen. Fallback for browsers that ignore
+        // <meta refresh> (some privacy extensions block it).
+        //
+        // sessionStorage guard prevents an infinite redirect loop if
+        // the Apps Script URL ever redirects back here.
         (function () {
-            var KEY   = 'school_account_last_redirect';
-            var TTL   = 2 * 60 * 1000;          // 2 minutes
-            var now   = Date.now();
-            var last  = 0;
-
-            try { last = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; }
-            catch (e) { /* localStorage blocked → just proceed to redirect */ }
-
-            var withinGuard = (now - last) < TTL;
-
-            // Remember this visit so a second tab within the TTL skips
-            // the redirect and shows the landing card instead.
-            try { localStorage.setItem(KEY, String(now)); }
-            catch (e) { /* localStorage blocked → redirect anyway */ }
-
-            if (withinGuard) {
-                // We were already redirected very recently. Show the
-                // landing card; the user can click through manually.
-                // This prevents the "two tabs fight each other" loop.
-                return;
+            try {
+                if (sessionStorage.getItem('redirected_to_apps_script') === 'yes') {
+                    sessionStorage.removeItem('redirected_to_apps_script');
+                    return;
+                }
+                sessionStorage.setItem('redirected_to_apps_script', 'yes');
+            } catch (e) {
+                // sessionStorage blocked (private mode edge case) — proceed anyway
             }
-
-            // Fresh entry → send the user straight to the Apps Script
-            // app. location.replace() keeps the browser back-button
-            // history clean (no loop back to github.io).
             window.location.replace('https://script.google.com/macros/s/AKfycbwaSNUA3soEaIwiuR4obnG74v1pxEfQkp1jzAGKIj7sy4-6v-6jGHFbKKr0z4nYgJp9/exec');
         })();
     </script>
@@ -73,14 +101,12 @@
         <h1>School Account</h1>
         <p class="status">
             <span class="spinner"></span>
-            Redirecting to the system…
+            Opening the system…
         </p>
-        <p style="font-size:0.8rem;color:#90a4ae;">
-            If you are not redirected automatically within a few seconds,
-            click the button below.
+        <p class="hint">
+            If nothing happens after 3 seconds, tap the button below.
         </p>
-        <!-- Fallback button — still present for slow connections -->
-        <a href="https://script.google.com/macros/s/AKfycbwaSNUA3soEaIwiuR4obnG74v1pxEfQkp1jzAGKIj7sy4-6v-6jGHFbKKr0z4nYgJp9/exec" class="btn" target="_top">Enter System →</a>
+        <a href="https://script.google.com/macros/s/AKfycbwaSNUA3soEaIwiuR4obnG74v1pxEfQkp1jzAGKIj7sy4-6v-6jGHFbKKr0z4nYgJp9/exec" class="btn">Enter System →</a>
     </div>
 </body>
 </html>
